@@ -1,6 +1,6 @@
 package com.agilogy.wapl
 
-import Json.JsonArray
+import Json.{JsonArray, JsonBoolean}
 
 object JsonParser:
 
@@ -13,3 +13,7 @@ object JsonParser:
     (string("[") ** whitespace ** string("]"))
       .map(_ => JsonArray(List.empty))
 
+  val jsonTrue: Parser[JsonBoolean] = string("true").map(_ => JsonBoolean(true))
+  val jsonFalse: Parser[JsonBoolean] = string("false").map(_ => JsonBoolean(false))
+
+  val boolean: Parser[JsonBoolean] = jsonTrue | jsonFalse
