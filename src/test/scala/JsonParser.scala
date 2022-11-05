@@ -20,4 +20,4 @@ object JsonParser:
 
   val booleanArray: Parser[JsonArray] =
     (string("[") ** boolean ** string(",") ** boolean ** string("]"))
-      .map { case ((((_, b1), _), b2), _) => JsonArray(List(b1, b2)) }
+      .map { case (b1, b2) => JsonArray(List(b1, b2)) }
