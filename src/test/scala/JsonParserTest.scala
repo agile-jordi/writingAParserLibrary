@@ -50,9 +50,11 @@ class JsonParserTest extends AnyFunSuite :
     assert(boolean(input) == Left(ParseError(input, 0, List("\"true\"", "\"false\""))))
   }
 
-  test("Parse array of true values") {
-    assert(booleanArray("[true,false]") ==
-      Right(JsonArray(List(JsonBoolean(true), JsonBoolean(false))))
+  test("Parse array of boolean values") {
+    val length = random.between(10000, 10005)
+    val booleans = (0 until length).map(_ => random.nextBoolean()).toList
+    assert(booleanArray(s"[${booleans.map(_.toString).mkString(",")}]") ==
+      Right(JsonArray(booleans.map(JsonBoolean)))
     )
   }
 

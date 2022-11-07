@@ -18,6 +18,10 @@ object JsonParser:
 
   val boolean: Parser[JsonBoolean] = jsonTrue | jsonFalse
 
-  val booleanArray: Parser[JsonArray] =
-    (string("[") ** boolean ** string(",") ** boolean ** string("]"))
-      .map { case (b1, b2) => JsonArray(List(b1, b2)) }
+  val booleanArray: Parser[Json] =
+    string("[") **
+      ((boolean ** (string(",") ** boolean).repeated).map {
+        case (b, l) => JsonArray(b :: l)
+      } | empty(JsonArray(List.empty)))
+      ** string("]")
+

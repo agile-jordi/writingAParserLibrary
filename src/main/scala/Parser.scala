@@ -1,7 +1,9 @@
 package com.agilogy.wapl
 
-import scala.annotation.targetName
-import com.agilogy.wapl.{sequence => _sequence}
+import scala.annotation.{tailrec, targetName}
+import com.agilogy.wapl.sequence as _sequence
+
+import scala.collection.mutable.ListBuffer
 
 type Parser[A] = (String, Int) => Either[ParseError, (A, Int)]
 
@@ -11,7 +13,7 @@ def string(token: String): Parser[Unit] = (s, position) =>
 
 def empty[A](value: A): Parser[A] = (_, position) => Right(value -> position)
 
-def sequence[A, B](a: Parser[A], b: Parser[B]): Parser[(A, B)] = (s, position) =>
+def sequence[A, B](a: Parser[A], b: => Parser[B]): Parser[(A, B)] = (s, position) =>
   for
     aI0 <- a(s, position)
     (a, i0) = aI0
@@ -20,9 +22,9 @@ def sequence[A, B](a: Parser[A], b: Parser[B]): Parser[(A, B)] = (s, position) =
   yield (a -> b) -> i1
 
 implicit class UnitParserOps(self: Parser[Unit]):
-  infix def sequence[B](other: Parser[B]): Parser[B] =
+  infix def sequence[B](other: => Parser[B]): Parser[B] =
     _sequence(self, other).map(_._2)
-  def **[B](other: Parser[B]): Parser[B] =
+  def **[B](other: => Parser[B]): Parser[B] =
     _sequence(self, other).map(_._2)
 
 implicit class ParserOps[A](self: Parser[A]):
@@ -43,12 +45,18 @@ implicit class ParserOps[A](self: Parser[A]):
         case Right(a) => Right(a)
         case Left(e2) => Left(e2.copy(expected = e1.expected ++ e2.expected))
 
-  infix def sequence[B](other: Parser[B]): Parser[(A, B)] = _sequence(self, other)
+  infix def sequence[B](other: => Parser[B]): Parser[(A, B)] = _sequence(self, other)
   @targetName("sequenceUnit")
-  infix def sequence(other: Parser[Unit]): Parser[A] = _sequence(self, other).map(_._1)
+  infix def sequence(other: => Parser[Unit]): Parser[A] = _sequence(self, other).map(_._1)
 
-  def **[B](other: Parser[B]): Parser[(A, B)] = sequence(other)
+  def **[B](other: => Parser[B]): Parser[(A, B)] = sequence(other)
   @targetName("starStarUnit")
   def **(other: Parser[Unit]): Parser[A] = sequence(other)
 
-  def repeated: Parser[List[A]] = (self ** repeated).map(_ :: _) | empty(List.empty)
+  def repeated: Parser[List[A]] = (s, position) =>
+    @tailrec
+    def loop(acc: List[A], pos: Int): (List[A],Int) =
+      self(s, pos) match
+        case Left(_) => (acc.reverse, pos)
+        case Right(a, newPos) => loop(a::acc, newPos)
+    Right(loop(List.empty, position))
