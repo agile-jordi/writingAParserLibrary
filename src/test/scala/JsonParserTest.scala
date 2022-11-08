@@ -58,4 +58,14 @@ class JsonParserTest extends AnyFunSuite :
     )
   }
 
+  test("Parse json numbers") {
+    assert(number("1") == Right(JsonNumber("1")))
+    assert(number("0.1") == Right(JsonNumber("0.1")))
+    assert(number("-0.1") == Right(JsonNumber("-0.1")))
+    assert(number("-0.1") == Right(JsonNumber("-0.1")))
+    assert(number("-0.1e2") == Right(JsonNumber("-0.1e2")))
+    assert(number("-0.1e+2") == Right(JsonNumber("-0.1e+2")))
+    assert(number("-0.1e-2") == Right(JsonNumber("-0.1e-2")))
+  }
+
 

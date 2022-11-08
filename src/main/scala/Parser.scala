@@ -4,6 +4,7 @@ import scala.annotation.{tailrec, targetName}
 import com.agilogy.wapl.sequence as _sequence
 
 import scala.collection.mutable.ListBuffer
+import scala.util.matching.Regex
 
 type Parser[A] = (String, Int) => Either[ParseError, (A, Int)]
 
@@ -20,6 +21,11 @@ def sequence[A, B](a: Parser[A], b: => Parser[B]): Parser[(A, B)] = (s, position
     bI1 <- b(s, i0)
     (b, i1) = bI1
   yield (a -> b) -> i1
+
+def regex(label: String, regex: Regex): Parser[String] = (s, position) =>
+  regex.findPrefixOf(s.substring(position))
+    .map(m => Right(m, position + m.length))
+    .getOrElse(Left(ParseError(s, position, List(label))))
 
 implicit class UnitParserOps(self: Parser[Unit]):
   infix def sequence[B](other: => Parser[B]): Parser[B] =

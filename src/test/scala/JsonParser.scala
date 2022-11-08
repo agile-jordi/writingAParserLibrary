@@ -1,6 +1,6 @@
 package com.agilogy.wapl
 
-import Json.{JsonArray, JsonBoolean}
+import Json.{JsonArray, JsonBoolean, JsonNumber}
 
 object JsonParser:
 
@@ -25,3 +25,5 @@ object JsonParser:
       } | empty(JsonArray(List.empty)))
       ** string("]")
 
+  val number: Parser[JsonNumber] =
+    regex("number", "-?([1-9][0-9]*|0)(\\.[0-9]+)?([eE][\\-+]?[0-9]+)?".r).map(JsonNumber.apply)
