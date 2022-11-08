@@ -44,7 +44,10 @@ implicit class ParserOps[A](self: Parser[A]):
   def map[B](f: A => B): Parser[B] = (s, position) =>
     self(s, position).map((a, finalPosition) => f(a) -> finalPosition)
 
-  def |(other: Parser[A]): Parser[A] = (s, position) =>
+  def as[B](b: B): Parser[B] = map(_ => b)
+
+
+  def |(other: => Parser[A]): Parser[A] = (s, position) =>
     self(s, position) match
       case Right(a) => Right(a)
       case Left(e1) => other(s, position) match

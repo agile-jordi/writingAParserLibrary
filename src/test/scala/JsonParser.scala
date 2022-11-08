@@ -1,16 +1,18 @@
 package com.agilogy.wapl
 
-import Json.{JsonArray, JsonBoolean, JsonNumber, JsonString}
+import Json.{JsonArray, JsonBoolean, JsonNumber, JsonString, JsonNull}
 
 object JsonParser:
 
   private val whiteSpaceChars = Set(' ', '\n', '\r', '\t')
 
-  val whitespace: Parser[Unit] = (s, position) =>
+  private val whitespace: Parser[Unit] = (s, position) =>
     Right(() -> (position + s.substring(position).takeWhile(c => whiteSpaceChars.contains(c)).length))
 
-  val jsonTrue: Parser[JsonBoolean] = token("true").map(_ => JsonBoolean(true))
-  val jsonFalse: Parser[JsonBoolean] = token("false").map(_ => JsonBoolean(false))
+  private val jsonTrue: Parser[JsonBoolean] = token("true").as(JsonBoolean(true))
+  private val jsonFalse: Parser[JsonBoolean] = token("false").as(JsonBoolean(false))
+
+  val jsonNull: Parser[JsonNull.type]  = token("null").as(JsonNull)
 
   val boolean: Parser[JsonBoolean] = jsonTrue | jsonFalse
 
@@ -20,9 +22,10 @@ object JsonParser:
   val number: Parser[JsonNumber] =
     regex("number", "-?([1-9][0-9]*|0)(\\.[0-9]+)?([eE][\\-+]?[0-9]+)?".r).map(JsonNumber.apply)
 
+  //noinspection ForwardReference
   val array: Parser[Json] =
     token("[") **
-      ((json ** (token(",") ** json).repeated).map { case (b, l) => JsonArray(b :: l) } | whitespace.map(_ => JsonArray(List.empty)))
+      ((json ** (token(",") ** json).repeated).map { case (b, l) => JsonArray(b :: l) } | whitespace.as(JsonArray(List.empty)))
       ** token("]")
 
   val json: Parser[Json] = boolean | string | number | array
