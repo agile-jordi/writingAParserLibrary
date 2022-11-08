@@ -32,12 +32,12 @@ class JsonParserTest extends AnyFunSuite :
   }
 
   test("Parse token") {
-    assert(string("[")("[") == Right(()))
+    assert(token("[")("[") == Right(()))
   }
 
   test("Parse token failure") {
     val input = "notTheStartArrayToken"
-    assert(string("[")(input) == Left(ParseError(input, 0, List("\"[\""))))
+    assert(token("[")(input) == Left(ParseError(input, 0, List("\"[\""))))
   }
 
   test("Parse boolean") {
@@ -66,6 +66,13 @@ class JsonParserTest extends AnyFunSuite :
     assert(number("-0.1e2") == Right(JsonNumber("-0.1e2")))
     assert(number("-0.1e+2") == Right(JsonNumber("-0.1e+2")))
     assert(number("-0.1e-2") == Right(JsonNumber("-0.1e-2")))
+  }
+
+  test("Parse json strings") {
+    assert(string("\"\"") == Right(JsonString("")))
+    assert(string("\"Json\"") == Right(JsonString("Json")))
+    assert(string("\"No només ASCII\"") == Right(JsonString("No només ASCII")))
+    assert(string("\"\u0020\udbff\udfff\"") == Right(JsonString("\u0020\udbff\udfff")))
   }
 
 

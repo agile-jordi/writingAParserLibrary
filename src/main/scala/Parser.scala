@@ -8,7 +8,7 @@ import scala.util.matching.Regex
 
 type Parser[A] = (String, Int) => Either[ParseError, (A, Int)]
 
-def string(token: String): Parser[Unit] = (s, position) =>
+def token(token: String): Parser[Unit] = (s, position) =>
   if (s.startsWith(token, position)) Right(() -> (position + token.length))
   else Left(ParseError(s, position, List(s"\"$token\"")))
 
