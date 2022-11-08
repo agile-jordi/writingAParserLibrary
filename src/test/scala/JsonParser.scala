@@ -1,6 +1,6 @@
 package com.agilogy.wapl
 
-import Json.{JsonArray, JsonBoolean, JsonNumber, JsonString, JsonNull}
+import Json.{JsonArray, JsonBoolean, JsonNumber, JsonString, JsonNull, JsonObject}
 
 object JsonParser:
 
@@ -28,4 +28,12 @@ object JsonParser:
       ((json ** (token(",") ** json).repeated).map { case (b, l) => JsonArray(b :: l) } | whitespace.as(JsonArray(List.empty)))
       ** token("]")
 
-  val json: Parser[Json] = boolean | string | number | array
+  //noinspection ForwardReference
+  val member: Parser[(String, Json)] = string.map(_.value) ** token(":") ** json
+
+  val obj: Parser[Json] =
+    token("{") **
+      ((member ** (token(",") ** member).repeated).map { case (b, l) => JsonObject((b :: l).toMap) } | whitespace.as(JsonObject(Map.empty)))
+      ** token("}")
+
+  val json: Parser[Json] = boolean | string | number | jsonNull | array | obj

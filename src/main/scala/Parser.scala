@@ -46,7 +46,6 @@ implicit class ParserOps[A](self: Parser[A]):
 
   def as[B](b: B): Parser[B] = map(_ => b)
 
-
   def |(other: => Parser[A]): Parser[A] = (s, position) =>
     self(s, position) match
       case Right(a) => Right(a)
