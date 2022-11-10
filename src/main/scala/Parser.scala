@@ -1,7 +1,7 @@
 package com.agilogy.wapl
 
 import scala.annotation.{tailrec, targetName}
-import com.agilogy.wapl.sequence as _sequence
+import com.agilogy.wapl._sequence as _sequence
 
 import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
@@ -14,7 +14,7 @@ def token(token: String): Parser[Unit] = (s, position) =>
 
 def empty[A](value: A): Parser[A] = (_, position) => Right(value -> position)
 
-def sequence[A, B](a: Parser[A], b: => Parser[B]): Parser[(A, B)] = (s, position) =>
+def _sequence[A, B](a: Parser[A], b: => Parser[B]): Parser[(A, B)] = (s, position) =>
   for
     aI0 <- a(s, position)
     (a, i0) = aI0
@@ -27,13 +27,18 @@ def regex(label: String, regex: Regex): Parser[String] = (s, position) =>
     .map(m => Right(m, position + m.length))
     .getOrElse(Left(ParseError(s, position, List(label))))
 
-implicit class UnitParserOps(self: Parser[Unit]):
+extension(self: Parser[Unit])
+
+  @targetName("unitSequence")
   infix def sequence[B](other: => Parser[B]): Parser[B] =
     _sequence(self, other).map(_._2)
+  @targetName("unitSequenceOp")
   def **[B](other: => Parser[B]): Parser[B] =
     _sequence(self, other).map(_._2)
 
-implicit class ParserOps[A](self: Parser[A]):
+end extension
+
+extension[A](self: Parser[A])
 
   def apply(s: String): Either[ParseError, A] =
     self(s, 0) match
@@ -54,12 +59,16 @@ implicit class ParserOps[A](self: Parser[A]):
         case Left(e2) => Left(e2.copy(expected = e1.expected ++ e2.expected))
 
   infix def sequence[B](other: => Parser[B]): Parser[(A, B)] = _sequence(self, other)
+  @targetName("sequenceOp")
+  def **[B](other: => Parser[B]): Parser[(A, B)] = _sequence(self, other)
+
   @targetName("sequenceUnit")
   infix def sequence(other: => Parser[Unit]): Parser[A] = _sequence(self, other).map(_._1)
+  @targetName("sequenceOpUnit")
+  def **(other: Parser[Unit]): Parser[A] = _sequence(self, other).map(_._1)
 
-  def **[B](other: => Parser[B]): Parser[(A, B)] = sequence(other)
-  @targetName("starStarUnit")
-  def **(other: Parser[Unit]): Parser[A] = sequence(other)
+  def separatedBy(separator: Parser[Unit]): Parser[List[A]] =
+    (self ** (separator ** self).repeated).map { case (h, t) => h :: t } | empty(List.empty)
 
   def repeated: Parser[List[A]] = (s, position) =>
     @tailrec
@@ -68,3 +77,8 @@ implicit class ParserOps[A](self: Parser[A]):
         case Left(_) => (acc.reverse, pos)
         case Right(a, newPos) => loop(a::acc, newPos)
     Right(loop(List.empty, position))
+
+end extension
+
+given Conversion[String, Parser[Unit]] with
+  def apply(str: String): Parser[Unit] = token(str)
